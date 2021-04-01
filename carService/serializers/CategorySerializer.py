@@ -27,7 +27,7 @@ class CategorySerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         try:
             instance.name = validated_data.get('name')
-            if validated_data.get('parent') != 0:
+            if validated_data.get('parent') != '0':
                 parent_category = Category.objects.get(pk=int(validated_data.get('parent')))
                 instance.parent = parent_category
             instance.save()

@@ -114,12 +114,16 @@ class PaymentSerializer(serializers.Serializer):
 
                 checking_account.save()
 
+            else:
+                raise serializers.ValidationError("Ödeme miktarı toplam ücretten fazla. Lütfen ödeme miktarını kontol ediniz")
+
             return checking_account
+
 
 
         except:
             traceback.print_exc()
-            raise serializers.ValidationError("lütfen tekrar deneyiniz")
+            raise serializers.ValidationError("Ödeme miktarı kalan toplam ücretten fazla olamaz.")
 
     def update(self, instance, validated_data):
         pass
