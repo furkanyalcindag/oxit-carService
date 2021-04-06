@@ -303,7 +303,11 @@ class DeterminationServiceApi(APIView):
                                  labor_price + (labor_price * labor_tax_rate / 100)
             service.save()
 
-            MailServices.send_mail(service=service, to=user_mail)
+            try:
+                MailServices.send_mail(service=service, to=user_mail)
+            except:
+                return Response("sdfs", status.HTTP_502_BAD_GATEWAY)
+
             return Response("Başarılı", status.HTTP_200_OK)
 
         except:
