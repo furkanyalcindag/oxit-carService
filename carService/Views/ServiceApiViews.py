@@ -141,24 +141,48 @@ class GetServicesApi(APIView):
         group_name = request.user.groups.filter()[0].name
         services = dict()
         count = 0
-        active_page =1
+        active_page = 1
+        plate = ''
         if request.GET.get('activePage') is not None:
             active_page = int(request.GET.get('activePage'))
+
+        if request.GET.get('plate') is not None:
+            plate = request.GET.get('plate')
 
         lim_start = 10 * (active_page - 1)
         lim_end = lim_start + 10
         if group_name == 'Tamirci':
             profile = Profile.objects.get(user=user)
-            services = Service.objects.filter(isDeleted=False).filter(
-                serviceman=profile).order_by('-id')[lim_start:lim_end]
+            if plate == '' or plate is None:
+                services = Service.objects.filter(isDeleted=False).filter(
+                    serviceman=profile).order_by('-id')[lim_start:lim_end]
+            else:
+                services = Service.objects.filter(isDeleted=False).filter(
+                    serviceman=profile).filter(car__plate__contains=plate).order_by('-id')[lim_start:lim_end]
+
             count = Service.objects.filter(isDeleted=False).filter(
                 serviceman=profile).count()
         elif group_name == 'Admin':
-            services = Service.objects.filter(isDeleted=False).order_by('-id')[lim_start:lim_end]
+            if plate == '' or plate is None:
+                services = Service.objects.filter(isDeleted=False).order_by('-id')[lim_start:lim_end]
+
+            else:
+                services = Service.objects.filter(isDeleted=False).filter(car__plate__icontains=plate).order_by('-id')[lim_start:lim_end]
+
+
             count = Service.objects.filter(isDeleted=False).count()
         elif group_name == 'Customer':
-            cars = Car.objects.filter(profile=Profile.objects.get(user=user))
-            services = Service.objects.filter(isDeleted=False).filter(car__in=cars).order_by('-id')[lim_start:lim_end]
+            if plate == '' or plate is None:
+                cars = Car.objects.filter(profile=Profile.objects.get(user=user))
+                services = Service.objects.filter(isDeleted=False).filter(car__in=cars).order_by('-id')[
+                           lim_start:lim_end]
+            else:
+                cars = Car.objects.filter(profile=Profile.objects.get(user=user)).filter(plate__icontains=plate)
+                services = Service.objects.filter(isDeleted=False).filter(car__in=cars).order_by('-id')[
+                           lim_start:lim_end]
+
+
+
             count = Service.objects.filter(isDeleted=False).filter(car__in=cars).count()
 
         # services = Service.objects.filter().order_by('-id')
