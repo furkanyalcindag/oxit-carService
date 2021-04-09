@@ -1,3 +1,5 @@
+import traceback
+
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -220,6 +222,7 @@ class StaffSerializer(serializers.Serializer):
             MailServices.send_password(password=password, to=user.email)
             return profile
         except Exception:
+            traceback.print_exc()
             user.delete()
             raise serializers.ValidationError("lütfen tekrar deneyiniz")
 

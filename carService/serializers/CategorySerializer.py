@@ -1,3 +1,5 @@
+import traceback
+
 from rest_framework import serializers
 
 from carService.models import Car, Category
@@ -26,15 +28,28 @@ class CategorySerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         try:
+            # bilgisayar
+            parent_category = Category.objects.get(pk=int(validated_data.get('parent')))
+            parent = Category.objects.get(pk=parent_category.pk)
+            # samsung güncellemeden önceki hali
             instance.name = validated_data.get('name')
-            if validated_data.get('parent') != 0:
-                parent_category = Category.objects.get(pk=int(validated_data.get('parent')))
+            if validated_data.get('parent') != '0':
                 instance.parent = parent_category
+            if validated_data.get('parent') == str(instance.pk):
+                raise serializers.ValidationError("lütfen verilerinizden emin olup tekrar deneyiniz")
+            if validated_data.get('id') == str(parent.parent_id) and parent.pk == parent_category.pk:
+                print("deneme")
+                raise serializers.ValidationError("sjkjfsdjfl")
+
+
             instance.save()
+
+
             return instance
 
         except Exception:
-            raise serializers.ValidationError("lütfen tekrar deneyiniz")
+            traceback.print_exc()
+            raise serializers.ValidationError("lütfen verilerinizden emin olup tekrar deneyiniz")
 
 
 class CategorySelectSerializer(serializers.Serializer):
