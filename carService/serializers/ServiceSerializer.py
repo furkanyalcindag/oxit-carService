@@ -44,12 +44,17 @@ class ServiceSerializer(serializers.Serializer):
     description = serializers.CharField(read_only=True)
     receiverPerson = serializers.CharField(read_only=True)
     camera = serializers.CharField(allow_blank=False, required=True, allow_null=True)
+    firmName = serializers.CharField(allow_blank=False, read_only=True, allow_null=True)
 
     def create(self, validated_data):
         try:
             service = Service()
             service.complaint = validated_data.get('complaint')
             service.car = Car.objects.get(uuid=validated_data.get('carUUID'))
+            if service.car.profile.isCorporate:
+                service.firmName = service.car.profile.firmName
+            else:
+                service.firmName = service.car.profile.user.first_name + ' ' + service.car.profile.user.last_name
             service.serviceType = ServiceType.objects.get(id=int(validated_data.get('serviceType')))
             if int(validated_data.get('camera')) > 0:
                 service.isCameraOpen = True

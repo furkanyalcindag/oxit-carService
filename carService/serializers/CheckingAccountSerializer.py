@@ -76,7 +76,7 @@ class PaymentDiscountSerializer(serializers.Serializer):
                 checking_account.save()
             if checking_account.remainingDebt == 0:
                 checking_account.paymentSituation = PaymentSituation.objects.get(name='Ödendi')
-                checking_account.paymentSituation.save()
+                checking_account.save()
             return checking_account
         except:
             traceback.print_exc()
