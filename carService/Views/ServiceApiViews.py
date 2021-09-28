@@ -167,8 +167,8 @@ class GetServicesApi(APIView):
                 services = Service.objects.filter(isDeleted=False).order_by('-id')[lim_start:lim_end]
 
             else:
-                services = Service.objects.filter(isDeleted=False).filter(car__plate__icontains=plate).order_by('-id')[lim_start:lim_end]
-
+                services = Service.objects.filter(isDeleted=False).filter(car__plate__icontains=plate).order_by('-id')[
+                           lim_start:lim_end]
 
             count = Service.objects.filter(isDeleted=False).count()
         elif group_name == 'Customer':
@@ -180,8 +180,6 @@ class GetServicesApi(APIView):
                 cars = Car.objects.filter(profile=Profile.objects.get(user=user)).filter(plate__icontains=plate)
                 services = Service.objects.filter(isDeleted=False).filter(car__in=cars).order_by('-id')[
                            lim_start:lim_end]
-
-
 
             count = Service.objects.filter(isDeleted=False).filter(car__in=cars).count()
 
@@ -203,7 +201,7 @@ class GetServicesApi(APIView):
                 "%d-%m-%Y %H:%M:%S")
             data['plate'] = service.car.plate
             data['responsiblePerson'] = service.responsiblePerson
-
+            data['firmName'] = service.car.profile.firmName
             data['serviceman'] = service.serviceman.user.first_name + ' ' + service.serviceman.user.last_name
 
             data['camera'] = None
