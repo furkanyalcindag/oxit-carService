@@ -179,7 +179,7 @@ def send_mail(service, to):
             name = profile.user.first_name + " " + profile.user.last_name
         serviceman = service.serviceman.user.first_name + \
                      " " + service.serviceman.user.last_name
-        subject, from_email = 'Kulmer Motorlu Araçlar Servis Bilgilendirme', 'servis@kulmer.com.tr'
+        subject, from_email = 'As Tek Yıldız Araç Servisi Bilgilendirme', 'servis@astekyildiz.com'
         text_content = 'Kulmer Motorlu Araçlar Servis Bilgilendirme'
 
         html = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">

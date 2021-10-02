@@ -180,7 +180,7 @@ class BrandApi(APIView):
         brand = Brand.objects.get(pk=request.GET.get('id'))
         data = dict()
 
-        if Product.objects.filter(brand=brand):
+        if Product.objects.filter(brand=brand,isDeleted=False):
             data['key'] = '1'
             data['value'] = 'Bu marka, kaydediler bir ürünle ilişkili olduğu için silinemez'
             serializer = ErrorSerializer(data, context={'request': request})

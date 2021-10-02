@@ -65,7 +65,7 @@ class ProductSerializerr(serializers.Serializer):
     # images = serializers.ListField(child=serializers.CharField())
     productImage = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     shelf = serializers.CharField(allow_null=True, allow_blank=True, required=False)
-    brand = serializers.CharField()
+    brand = serializers.CharField(allow_null=True,required=False)
     purchasePrice = serializers.DecimalField(max_digits=10, decimal_places=2)
     uuid = serializers.UUIDField(allow_null=True, required=False)
 
