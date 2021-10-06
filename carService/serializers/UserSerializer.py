@@ -105,7 +105,7 @@ class CustomerAddSerializer(serializers.Serializer):
         user = None
 
         if validated_data.get('username') == "" or validated_data.get('username') is None:
-            user = User.objects.create_user(username=uuid.UUID)
+            user = User.objects.create_user(username=uuid.uuid4())
         else:
             user = User.objects.create_user(username=validated_data.get('username'),
                                             email=validated_data.get('username'))
