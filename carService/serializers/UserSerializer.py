@@ -1,4 +1,5 @@
 import traceback
+import uuid
 
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
@@ -26,7 +27,7 @@ class UserAddSerializer(serializers.Serializer):
     gender = serializers.CharField(required=False)
     firstName = serializers.CharField(required=False)
     lastName = serializers.CharField(required=False)
-    username = serializers.CharField(write_only=True, required=False,
+    username = serializers.CharField(write_only=True,
                                      validators=[UniqueValidator(queryset=User.objects.all())])
     password = serializers.CharField(write_only=True)
     birthDate = serializers.DateField(required=False)
@@ -86,8 +87,8 @@ class CustomerAddSerializer(serializers.Serializer):
     gender = serializers.CharField(required=False)
     firstName = serializers.CharField(required=True, write_only=True)
     lastName = serializers.CharField(required=True, write_only=True)
-    username = serializers.CharField(required=False, write_only=True,
-                                     )
+    username = serializers.CharField(required=False, write_only=True,allow_blank=True,allow_null=True,
+                                     validators=[UniqueValidator(queryset=User.objects.all())]           )
     # password = serializers.CharField(write_only=True)
     birthDate = serializers.DateField(required=False)
     city = serializers.CharField(required=False)
@@ -101,9 +102,14 @@ class CustomerAddSerializer(serializers.Serializer):
     isSendMail = serializers.BooleanField(read_only=True)
 
     def create(self, validated_data):
+        user = None
 
-        user = User.objects.create_user(username=validated_data.get('username'),
-                                        email=validated_data.get('username'))
+        if validated_data.get('username') == "" or validated_data.get('username') is None:
+            user = User.objects.create_user(username=uuid.UUID)
+        else:
+            user = User.objects.create_user(username=validated_data.get('username'),
+                                            email=validated_data.get('username'))
+
         user.first_name = validated_data.get("firstName")
         user.last_name = validated_data.get("lastName")
         password = User.objects.make_random_password()

@@ -201,6 +201,11 @@ class BrandSelectApi(APIView):
         select_object_root.value = ""
         brands_objects.append(select_object_root)
 
+        category_objectRoot = SelectObject()
+        category_objectRoot.label = "Yok"
+        category_objectRoot.value = "0"
+        brands_objects.append(category_objectRoot)
+
         for brand in brands:
             select_object = SelectObject()
             select_object.label = brand.name

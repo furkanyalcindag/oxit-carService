@@ -37,8 +37,6 @@ class BrandSerializer(serializers.Serializer):
             raise serializers.ValidationError("lütfen tekrar deneyiniz")
 
 
-
-
 class BrandPageSerializer(serializers.Serializer):
     data = BrandSerializer(many=True)
     recordsTotal = serializers.IntegerField()
@@ -65,7 +63,7 @@ class ProductSerializerr(serializers.Serializer):
     # images = serializers.ListField(child=serializers.CharField())
     productImage = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     shelf = serializers.CharField(allow_null=True, allow_blank=True, required=False)
-    brand = serializers.CharField(allow_null=True,required=False)
+    brand = serializers.CharField(allow_null=True, required=False)
     purchasePrice = serializers.DecimalField(max_digits=10, decimal_places=2)
     uuid = serializers.UUIDField(allow_null=True, required=False)
 
@@ -86,7 +84,7 @@ class ProductSerializerr(serializers.Serializer):
                     validated_data.get('netPrice') * validated_data.get('taxRate') / 100)
 
             instance.brand = Brand.objects.get(pk=int(validated_data.get('brand')))
-            instance.save()
+
 
             category = Category.objects.get(pk=int(validated_data.get('categories')))
             product_categories = ProductCategory.objects.filter(product=instance)
@@ -94,10 +92,16 @@ class ProductSerializerr(serializers.Serializer):
             for product_category in product_categories:
                 product_category.delete()
 
-            product_category = ProductCategory()
-            product_category.product = instance
-            product_category.category = category
-            product_category.save()
+            if int(validated_data.get('brand')) != 0:
+                instance.brand = Brand.objects.get(pk=int(validated_data.get('brand')))
+
+            instance.save()
+            if int(validated_data.get('categories')) != 0:
+                category = Category.objects.get(pk=int(validated_data.get('categories')))
+                productCategory = ProductCategory()
+                productCategory.product = instance
+                productCategory.category = category
+                productCategory.save()
 
             return instance
 
@@ -121,19 +125,26 @@ class ProductSerializerr(serializers.Serializer):
 
             if validated_data.get('productImage') is not None or validated_data.get('productImage') != '':
                 product.productImage = validated_data.get('productImage')
-            product.brand = Brand.objects.get(pk=int(validated_data.get('brand')))
-            product.save()
+
 
             '''productImage = ProductImage()
             productImage.product = product
             productImage.image = validated_data.get('productImage')
             productImage.save()'''
 
-            category = Category.objects.get(pk=int(validated_data.get('categories')))
-            productCategory = ProductCategory()
-            productCategory.product = product
-            productCategory.category = category
-            productCategory.save()
+            if int(validated_data.get('brand')) != 0:
+                product.brand = Brand.objects.get(pk=int(validated_data.get('brand')))
+
+            product.save()
+            if int(validated_data.get('categories')) != 0:
+                category = Category.objects.get(pk=int(validated_data.get('categories')))
+                productCategory = ProductCategory()
+                productCategory.product = product
+                productCategory.category = category
+                productCategory.save()
+
+
+
             '''for x in validated_data.get('categories'):
                 category = Category.objects.get(pk=x)
                 productCategory = ProductCategory()
