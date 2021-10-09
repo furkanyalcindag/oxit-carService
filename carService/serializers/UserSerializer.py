@@ -87,8 +87,8 @@ class CustomerAddSerializer(serializers.Serializer):
     gender = serializers.CharField(required=False)
     firstName = serializers.CharField(required=True, write_only=True)
     lastName = serializers.CharField(required=True, write_only=True)
-    username = serializers.CharField(required=False, write_only=True,allow_blank=True,allow_null=True,
-                                     validators=[UniqueValidator(queryset=User.objects.all())]           )
+    username = serializers.CharField(required=False, write_only=True, allow_blank=True, allow_null=True,
+                                     validators=[UniqueValidator(queryset=User.objects.all())])
     # password = serializers.CharField(write_only=True)
     birthDate = serializers.DateField(required=False)
     city = serializers.CharField(required=False)
@@ -105,7 +105,8 @@ class CustomerAddSerializer(serializers.Serializer):
         user = None
 
         if validated_data.get('username') == "" or validated_data.get('username') is None:
-            user = User.objects.create_user(username=uuid.uuid4())
+            uuidAstek = uuid.uuid4()
+            user = User.objects.create_user(username=uuidAstek, email=uuidAstek.__str__() + '@astekyildiz.com')
         else:
             user = User.objects.create_user(username=validated_data.get('username'),
                                             email=validated_data.get('username'))
@@ -212,6 +213,7 @@ class StaffSerializer(serializers.Serializer):
                                         email=validated_data.get('username'))
         email = user.email
         password = User.objects.make_random_password()
+        # password = user.set_password("astekyildiz2021")
         user.first_name = validated_data.get("firstName")
         user.last_name = validated_data.get("lastName")
         user.set_password(password)
