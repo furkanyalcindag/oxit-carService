@@ -26,7 +26,29 @@ class CheckingAccountApi(APIView):
     permission_classes = (IsAuthenticated, IsCustomerOrAdmin,)
 
     def get(self, request, format=None):
-        checking_accounts = CheckingAccount.objects.all().order_by('-id')
+
+        count = 0
+        active_page = 1
+        plate = ''
+        customer = ''
+        if request.GET.get('activePage') is not None:
+            active_page = int(request.GET.get('activePage'))
+
+        if request.GET.get('plate') is not None:
+            plate = request.GET.get('plate')
+
+        if request.GET.get('customer') is not None:
+            customer = request.GET.get('customer')
+
+        lim_start = 10 * (active_page - 1)
+        lim_end = lim_start + 10
+
+        checking_accounts = CheckingAccount.objects.filter(service__car__plate__icontains=plate,
+                                                           service__car__profile__firmName__icontains=customer
+                                                           ).order_by('-id')[lim_start:lim_end]
+        count = CheckingAccount.objects.filter(service__car__plate__icontains=plate,
+                                               service__car__profile__firmName__icontains=customer
+                                               ).count()
         checking_account_array = []
         for checking_account in checking_accounts:
             data = dict()
@@ -50,7 +72,7 @@ class CheckingAccountApi(APIView):
         api_object = APIObject()
         api_object.data = checking_account_array
         api_object.recordsFiltered = checking_accounts.count()
-        api_object.recordsTotal = checking_accounts.count()
+        api_object.recordsTotal = count
 
         serializer = CheckingAccountPageSerializer(api_object, context={'request': request})
         return Response(serializer.data, status.HTTP_200_OK)
@@ -189,8 +211,6 @@ class PaymentTypeSelectApi(APIView):
         return Response(serializer.data, status.HTTP_200_OK)
 
 
-
-
 class GetCheckingAccountPdfApi(APIView):
     permission_classes = (IsAuthenticated, IsAdmin,)
 
@@ -226,9 +246,10 @@ class GetCheckingAccountPdfApi(APIView):
         # Rendered
         html_string = render_to_string('pdf.html',
                                        {'paymentMovement': payment_movement_array, 'service': service, 'car': car,
-                                        'profile': profile, 'logo': logo, 'name': name,'remain':remain,'totalPrice':total_price})
+                                        'profile': profile, 'logo': logo, 'name': name, 'remain': remain,
+                                        'totalPrice': total_price})
 
-        html_string=html_string.encode('utf-8').strip()
+        html_string = html_string.encode('utf-8').strip()
         html = HTML(string=html_string)
         result = html.write_pdf('tmp/ekstre.pdf')
 
@@ -244,6 +265,3 @@ class GetCheckingAccountPdfApi(APIView):
 
         return FileResponse(open('tmp/ekstre.pdf', 'rb'), status=status.HTTP_200_OK,
                             content_type='application/pdf')
-
-
-
