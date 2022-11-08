@@ -42,6 +42,7 @@ def get_buttons(group_name: str, service_situation: str, service : Service):
         if service_situation == 'Arıza Tespiti Bekleniyor':
             buttons.append(button_object_info)
             buttons.append(button_object_delete)
+            buttons.append(button_object_make_determination)
             if service.isCameraOpen:
                 buttons.append(button_object_camera)
 
@@ -56,12 +57,14 @@ def get_buttons(group_name: str, service_situation: str, service : Service):
         elif service_situation == 'İşlem Bekleniyor':
             buttons.append(button_object_info)
             buttons.append(button_object_delete)
+            buttons.append(button_object_get_process)
             if service.isCameraOpen:
                 buttons.append(button_object_camera)
 
         elif service_situation == 'İşlemde':
             buttons.append(button_object_info)
             buttons.append(button_object_delete)
+            buttons.append(button_object_complete_process)
             if service.isCameraOpen:
                 buttons.append(button_object_camera)
 
