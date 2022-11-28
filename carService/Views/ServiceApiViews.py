@@ -464,7 +464,7 @@ class GetServicePdfApi(APIView):
                     <div class="row">
                         <div class="row col-4 entry"><h3 class="col-4">Müşteri:</h3><p>''' + name + '''</p></div>
                         <div class="row col-4 entry"><h3 class="col-5">Servise Getiren:</h3><p>''' + service.responsiblePerson + '''</p></div>
-                        <div class="row col-4 entry"><h3 class="col-4">Servis No:</h3><p>''' + service.responsiblePerson + '''</p></div>
+                        <div class="row col-4 entry"><h3 class="col-4">Servis No:</h3><p>''' + str(service.id) + '''</p></div>
                     </div>
                     <div class="row">
                         <div class="row col-3 entry"><h3>Plaka:</h3><p>''' + car.plate + '''</p></div>
