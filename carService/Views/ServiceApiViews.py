@@ -17,6 +17,7 @@ from carService.models import Service, Car, ServiceSituation, Profile, ServicePr
     CheckingAccount, PaymentSituation
 from carService.models.ApiObject import APIObject
 from carService.models.SelectObject import SelectObject
+from carService.models.ServiceExtraLabor import ServiceExtraLabor
 from carService.models.ServiceType import ServiceType
 from carService.serializers.GeneralSerializer import SelectSerializer
 from carService.serializers.ProductSerializer import ProductSerializer
@@ -273,64 +274,80 @@ class DeterminationServiceApi(APIView):
 
     def post(self, request, format=None):
         try:
-            products = request.data['products']
-            photos = request.data['photos']
-            uuid = request.data['uuid']
-            determination = request.data['determination'] if request.data['determination'] is not None else ''
-            labor_price = Decimal(request.data['laborPrice'])
-            labor_tax_rate = Decimal(request.data['laborTaxRate'])
-            labor_name = request.data['laborName']
+            with transaction.atomic():
+                products = request.data['products']
+                photos = request.data['photos']
+                uuid = request.data['uuid']
+                extra_lobors = request.data['extraLabors']
+                determination = request.data['determination'] if request.data['determination'] is not None else ''
+                labor_price = Decimal(request.data['laborPrice'])
+                labor_tax_rate = Decimal(request.data['laborTaxRate'])
+                labor_name = request.data['laborName']
 
-            service = Service.objects.get(uuid=uuid)
+                service = Service.objects.get(uuid=uuid)
 
-            user_mail = service.car.profile.user.email
-            service.description = determination
-            service.save()
+                user_mail = service.car.profile.user.email
+                service.description = determination
+                service.save()
 
-            net_price = 0
-            total_price = 0
-            for product in products:
-                productObj = Product.objects.get(uuid=product['uuid'])
-                for i in range(product['quantity']):
-                    serviceProduct = ServiceProduct()
-                    serviceProduct.product = productObj
-                    serviceProduct.service = service
-                    serviceProduct.productNetPrice = Decimal(product['netPrice'])
-                    serviceProduct.productTaxRate = productObj.taxRate
-                    serviceProduct.quantity = 1
-                    serviceProduct.productTotalPrice = Decimal(product['netPrice']) + (
-                            Decimal(product['netPrice']) * productObj.taxRate / 100)
-                    net_price = net_price + Decimal(product['netPrice'])
-                    total_price = total_price + serviceProduct.productTotalPrice
-                    serviceProduct.save()
+                net_price = 0
+                total_price = 0
+                for product in products:
+                    productObj = Product.objects.get(uuid=product['uuid'])
+                    for i in range(product['quantity']):
+                        serviceProduct = ServiceProduct()
+                        serviceProduct.product = productObj
+                        serviceProduct.service = service
+                        serviceProduct.productNetPrice = Decimal(product['netPrice'])
+                        serviceProduct.productTaxRate = productObj.taxRate
+                        serviceProduct.quantity = 1
+                        serviceProduct.productTotalPrice = Decimal(product['netPrice']) + (
+                                Decimal(product['netPrice']) * productObj.taxRate / 100)
+                        net_price = net_price + Decimal(product['netPrice'])
+                        total_price = total_price + serviceProduct.productTotalPrice
+                        serviceProduct.save()
 
-            for photo in photos:
-                serviceImage = ServiceImage()
-                serviceImage.service = service
-                serviceImage.image = photo['path']
-                serviceImage.save()
+                for extra in extra_lobors:
+                    extra_labor = ServiceExtraLabor()
+                    extra_labor.laborName = extra['laborName']
+                    extra_labor.laborPrice = Decimal(extra['laborPrice'])
+                    extra_labor.laborTaxRate = Decimal(extra['laborTaxRate'])
+                    extra_labor.service = service
+                    net_price = net_price + Decimal(extra['laborPrice'])
+                    total_price = total_price + Decimal(extra['laborPrice']) + (
+                            Decimal(extra['laborPrice']) * Decimal(extra['laborTaxRate']) / 100)
+                    extra_labor.save()
 
-            situation = Situation.objects.get(
-                name__exact='Müşteri Onayı Bekleniyor')
-            service_situation = ServiceSituation()
-            service_situation.service = service
-            service_situation.situation = situation
-            service_situation.save()
-            service.price = net_price + labor_price
-            service.totalPrice = total_price
-            service.laborPrice = labor_price
-            service.laborTaxRate = labor_tax_rate
-            service.laborName = labor_name
-            service.totalPrice = service.totalPrice + \
-                                 labor_price + (labor_price * labor_tax_rate / 100)
-            service.save()
 
-            try:
-                MailServices.send_mail(service=service, to=user_mail)
-            except:
-                return Response("sdfs", status.HTTP_502_BAD_GATEWAY)
 
-            return Response("Başarılı", status.HTTP_200_OK)
+                for photo in photos:
+                    serviceImage = ServiceImage()
+                    serviceImage.service = service
+                    serviceImage.image = photo['path']
+                    serviceImage.save()
+
+                situation = Situation.objects.get(
+                    name__exact='Müşteri Onayı Bekleniyor')
+                service_situation = ServiceSituation()
+                service_situation.service = service
+                service_situation.situation = situation
+                service_situation.save()
+                service.price = net_price + labor_price
+                service.totalPrice = total_price
+                service.laborPrice = labor_price
+                service.laborTaxRate = labor_tax_rate
+                service.laborName = labor_name
+                service.totalPrice = service.totalPrice + \
+                                     labor_price + (labor_price * labor_tax_rate / 100)
+                service.save()
+
+                try:
+                    MailServices.send_mail(service=service, to=user_mail)
+                except:
+                    return Response("sdfs", status.HTTP_502_BAD_GATEWAY)
+
+                return Response("Başarılı", status.HTTP_200_OK)
+
 
         except:
             traceback.print_exc()
@@ -343,7 +360,30 @@ class GetServiceProductsApi(APIView):
     def get(self, request, format=None):
         service = Service.objects.get(uuid=request.GET.get('uuid'))
         service_products = ServiceProduct.objects.filter(service=service)
+        extra_labors = ServiceExtraLabor.objects.filter(service=service)
         products = []
+
+        for extra_labor in extra_labors:
+            product = Product()
+            product.name = extra_labor.laborName
+            product.netPrice = extra_labor.laborPrice
+            product.quantity = 1
+            product.taxRate = extra_labor.laborTaxRate
+            product.totalProduct = extra_labor.laborPrice + (extra_labor.laborPrice*extra_labor.laborTaxRate/100)
+            products.append(product)
+
+        labor = Product()
+        labor.barcodeNumber = '-'
+        labor.name = service.laborName
+        labor.brand = None
+        labor.quantity = 1
+        labor.netPrice = service.laborPrice
+        labor.taxRate = service.laborTaxRate
+        labor.totalProduct = (
+                float(service.laborPrice) + (float(service.laborPrice) * float(service.laborTaxRate) / 100))
+        if labor.name != None and labor.netPrice > 0:
+            products.append(labor)
+
         for serviceProduct in service_products:
 
             isExist = False
@@ -391,24 +431,55 @@ class GetServicePdfApi(APIView):
         service = Service.objects.get(uuid=request.GET.get('uuid'))
         situation = ServiceSituation.objects.filter(service=service).order_by('-id')[:1][
             0].situation.name
-        if situation == "Teslim Edildi":
+        if situation != "":
             car = Car.objects.get(uuid=service.car.uuid)
             car_model = car.model
             car_brand = car.brand
             service_products = ServiceProduct.objects.filter(service=service)
+            extra_labors = ServiceExtraLabor.objects.filter(service=service)
             products = []
             service_images = ServiceImage.objects.filter(service=service)
             images = ""
             for image in service_images:
                 html_tagged = '''<img class="car-image" src=''' + image.image + '''></img>'''
                 images += html_tagged
+
             for serviceProduct in service_products:
+
+                isExist = False
+                for productArr in products:
+                    if serviceProduct.product.uuid == productArr.uuid:
+                        productArr.quantity = productArr.quantity + serviceProduct.quantity
+                        productArr.netPrice = serviceProduct.productNetPrice * productArr.quantity
+                        productArr.totalProduct = serviceProduct.productTotalPrice * productArr.quantity
+                        isExist = True
+
+                if not isExist:
+                    product = serviceProduct.product
+                    product.netPrice = serviceProduct.productNetPrice
+                    product.totalProduct = serviceProduct.productTotalPrice
+                    product.taxRate = serviceProduct.productTaxRate
+                    product.quantity = serviceProduct.quantity
+                    products.append(product)
+
+            '''for serviceProduct in service_products:
                 product = serviceProduct.product
                 product.netPrice = serviceProduct.productNetPrice
                 product.totalProduct = serviceProduct.productTotalPrice
                 product.taxRate = serviceProduct.productTaxRate
                 product.quantity = serviceProduct.quantity
+                products.append(product)'''
+
+            for extra_labor in extra_labors:
+                product = Product()
+                product.name = extra_labor.laborName
+                product.netPrice = extra_labor.laborPrice
+                product.quantity = 1
+                product.taxRate = extra_labor.laborTaxRate
+                product.totalProduct = extra_labor.laborPrice + (
+                            extra_labor.laborPrice * extra_labor.laborTaxRate / 100)
                 products.append(product)
+
             labor = ServiceProduct.product
             labor.barcodeNumber = '-'
             labor.name = service.laborName
@@ -418,7 +489,7 @@ class GetServicePdfApi(APIView):
             labor.taxRate = service.laborTaxRate
             labor.totalProduct = (
                     float(service.laborPrice) + (float(service.laborPrice) * float(service.laborTaxRate) / 100))
-            if labor.name != None:
+            if labor.name != None and labor.netPrice>0:
                 products.append(labor)
             profile = car.profile
             receiver = "-"
@@ -462,8 +533,9 @@ class GetServicePdfApi(APIView):
                 <div class="section-header">Servis Bilgileri</div>
                 <div class="container">
                     <div class="row">
-                        <div class="row col-6 entry"><h3 class="col-4">Müşteri:</h3><p>''' + name + '''</p></div>
-                        <div class="row col-6 entry"><h3 class="col-5">Servise Getiren:</h3><p>''' + service.responsiblePerson + '''</p></div>       
+                        <div class="row col-4 entry"><h3 class="col-4">Müşteri:</h3><p>''' + name + '''</p></div>
+                        <div class="row col-4 entry"><h3 class="col-5">Servise Getiren:</h3><p>''' + service.responsiblePerson + '''</p></div>
+                        <div class="row col-4 entry"><h3 class="col-4">Servis No:</h3><p>''' + str(service.id) + '''</p></div>
                     </div>
                     <div class="row">
                         <div class="row col-3 entry"><h3>Plaka:</h3><p>''' + car.plate + '''</p></div>
