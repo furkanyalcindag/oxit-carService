@@ -443,13 +443,32 @@ class GetServicePdfApi(APIView):
             for image in service_images:
                 html_tagged = '''<img class="car-image" src=''' + image.image + '''></img>'''
                 images += html_tagged
+
             for serviceProduct in service_products:
+
+                isExist = False
+                for productArr in products:
+                    if serviceProduct.product.uuid == productArr.uuid:
+                        productArr.quantity = productArr.quantity + serviceProduct.quantity
+                        productArr.netPrice = serviceProduct.productNetPrice * productArr.quantity
+                        productArr.totalProduct = serviceProduct.productTotalPrice * productArr.quantity
+                        isExist = True
+
+                if not isExist:
+                    product = serviceProduct.product
+                    product.netPrice = serviceProduct.productNetPrice
+                    product.totalProduct = serviceProduct.productTotalPrice
+                    product.taxRate = serviceProduct.productTaxRate
+                    product.quantity = serviceProduct.quantity
+                    products.append(product)
+
+            '''for serviceProduct in service_products:
                 product = serviceProduct.product
                 product.netPrice = serviceProduct.productNetPrice
                 product.totalProduct = serviceProduct.productTotalPrice
                 product.taxRate = serviceProduct.productTaxRate
                 product.quantity = serviceProduct.quantity
-                products.append(product)
+                products.append(product)'''
 
             for extra_labor in extra_labors:
                 product = Product()
